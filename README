@@ -1,0 +1,1 @@
+ColdFusion CFC used to connect to the USPS API. Updated: Now supports RateV3 (shipping rate), ZipCodeLookup and CityStateLookup API's.
