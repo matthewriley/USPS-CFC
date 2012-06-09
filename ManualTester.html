@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+
+<html lang="en-US">
+<head>
+	<title>USPS Manual Tester</title>
+	<meta charset="utf-8" />
+</head>
+
+<body>
+
+<h3>USPS Manual Tester</h3>
+
+<p>This is a basic form that allows you to submit raw API and XML data to the USPS Test API. Nothing fancy, just plain HTML.</p>
+
+<form action="http://testing.shippingapis.com/ShippingAPITest.dll" id="manualTester" method="post">
+	<input type="text" name="API" id="API" autocorrect="off" autocapitalize="off" placeholder="API" value="" required><br>
+	<textarea name="XML" id="XML" cols="75" rows="20" wrap="off" autocorrect="off" autocapitalize="off" placeholder="XML" required></textarea><br>
+	<input type="submit" id="submit" value="Submit">
+</form>
+
+</body>
+</html>

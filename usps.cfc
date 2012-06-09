@@ -1,16 +1,10 @@
 ﻿<!---
 File: usps.cfc
 
-Summary:	Connects to the USPS API. Currently supports the RateV3,
-			ZipCodeLookup and CityStateLookup API's'. Future releases
-			will support Verify, TrackV2, ExpressMailCommitment and
-			CarrierPickupAvailability API's.
+For full details see README.md at GitHub:
+https://github.com/matthewriley/USPS-CFC
 
-Use:		In order for this CFC to work you must have a USPS API account
-			and you must perform the tests required by the USPS to activate
-			your account.
-
-Copyright © 2008 Matthew Riley
+Copyright © Matthew Riley
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,55 +19,71 @@ See the License for the specific language governing permissions and
 limitations under the License.
 --->
 
-<cfcomponent displayname="usps" output="false">
+<cfcomponent name="USPS" displayname="USPS CFC" accessors="true" output="false" hint="This is a ColdFusion CFC used to connect to the USPS API.">
+	<cfproperty name="isProduction" type="boolean" default="false">
+	<cfproperty name="isSecure" type="boolean" default="true">
+	<cfproperty name="uspsUserID" type="string" default="">
+	<cfproperty name="url" type="string" default="">
+	<cfproperty name="URLTEST" type="string" default="http://testing.shippingapis.com/ShippingAPITest.dll">
+	<cfproperty name="URLTESTSECURE" type="string" default="https://secure.shippingapis.com/ShippingAPITest.dll">
+	<cfproperty name="URLPROD" type="string" default="http://production.shippingapis.com/ShippingAPI.dll">
+	<cfproperty name="URLPRODSECURE" type="string" default="https://secure.shippingaps.com/ShippingAPI.dll">
 
-	<cffunction name="prepFunc" access="private" returntype="struct" output="false" hint="Returns USPS URL based on productionURL and secureURL flags. Also returns USPS user name.">
-		<cfargument name="productionURL" type="Boolean" required="false" default="false">
-		<cfargument name="secureURL" type="Boolean" required="false" default="false">
+	<cffunction name="init" access="public" returntype="USPS" output="false" hint="Initializes the USPS CFC">
+		<cfargument name="isProduction" type="boolean" required="false" default="#getIsProduction()#">
+		<cfargument name="isSecure" type="boolean" required="false" default="#getIsSecure()#">
+		<cfargument name="uspsUserID" type="string" required="false" default="#getUspsUserID()#">
 		<cfscript>
-			var func = StructNew();
-			func.apiURLTest = 'http://testing.shippingapis.com/ShippingAPITest.dll';
-			func.apiURLSecureTest = 'https://secure.shippingapis.com/ShippingAPITest.dll';
-			func.apiURL = 'http://production.shippingapis.com/ShippingAPI.dll';
-			func.apiURLSecure = 'https://secure.shippingaps.com/ShippingAPI.dll';
-			if(arguments.productionURL){
-				if(arguments.secureURL){
-					func.url = func.apiURLSecure;
+			// set production and secure flags
+			setIsProduction(arguments.isProduction);
+			setIsSecure(arguments.isSecure);
+			setUspsUserID(arguments.uspsUserID);
+
+			// configure url based on flags
+			if(getIsProduction()){
+				if(getIsSecure()){
+					setUrl(getURLPRODSECURE());
 				}
 				else{
-					func.url = func.apiURL;
+					setUrl(getURLPROD());
 				}
 			}
 			else{
-				if(arguments.secureURL){
-					func.url = func.apiURLSecureTest;
+				if(getIsSecure()){
+					setUrl(getURLTESTSECURE());
 				}
 				else{
-					func.url = func.apiURLTest;
+					setUrl(getURLTEST());
 				}
 			}
-			return func;
+
+			return this;
 		</cfscript>
 	</cffunction>
 
 	<cffunction name="processRequest" access="private" returntype="xml" output="false" hint="Makes the HTTP request to the USPS API.">
-		<cfargument name="url" type="String" required="true" />
-		<cfargument name="api" type="String" required="true" />
-		<cfargument name="xml" type="String" required="true" />
-		<cfset var func = prepFunc() />
+		<cfargument name="api" type="String" required="true">
+		<cfargument name="xml" type="String" required="true">
 
-		<cfhttp url="#arguments.url#" method="post">
-			<cfhttpparam encoded="no" type="formfield" name="api" value="#arguments.api#" />
-			<cfhttpparam encoded="no" type="formfield" name="xml" value="#arguments.xml#" />
-		</cfhttp>
+		<cftry>
+			<cfhttp url="#getUrl()#" method="post" timeout="3" throwonerror="true">
+				<cfhttpparam encoded="no" type="formfield" name="api" value="#arguments.api#">
+				<cfhttpparam encoded="no" type="formfield" name="xml" value="#arguments.xml#">
+			</cfhttp>
+			<cfset local.responseXML = cfhttp.fileContent />
+			<cfcatch type="any" name="e">
+				<cfset local.responseXML = '<?xml version="1.0"?>
+				<Error>
+					<Type>#e.Type#</Type>
+					<Message>#e.Message#</Message>
+				</Error>' />
+			</cfcatch>
+		</cftry>
 
-		<cfreturn XmlParse(cfhttp.fileContent) />
+		<cfreturn XmlParse(local.responseXML)>
 	</cffunction>
 
-	<cffunction name="RateV3" access="public" returntype="xml" output="false" hint="Returns domestic rates from the USPS RateV3 API">
-		<cfargument name="productionURL" type="Boolean" required="false" default="true">
-		<cfargument name="secureURL" type="Boolean" required="false" default="false">
-		<cfargument name="userid" type="String" required="true">
+	<cffunction name="RateV4" access="public" returntype="xml" output="false" hint="Returns domestic rates from the USPS RateV4 API">
 		<cfargument name="Service" type="String" required="true">
 		<cfargument name="FirstClassMailType" type="String" required="false" default="">
 		<cfargument name="ZipOrigination" type="String" required="true">
@@ -90,9 +100,8 @@ limitations under the License.
 		<cfargument name="ReturnLocations" type="String" required="false" default="">
 		<cfargument name="ShipDate" type="String" required="false" default="">
 		<cfscript>
-			var func = prepFunc(arguments.productionURL, arguments.secureURL);
-			func.api = 'RateV3';
-			func.xml = '<RateV3Request USERID="#arguments.userid#">
+			local.api = 'RateV4';
+			local.xml = '<RateV4Request USERID="#getUspsUserID()#">
 					<Package ID="1">
 						<Service>#arguments.Service#</Service>
 						<FirstClassMailType>#arguments.FirstClassMailType#</FirstClassMailType>
@@ -110,25 +119,21 @@ limitations under the License.
 						<ReturnLocations>#arguments.ReturnLocations#</ReturnLocations>
 						<ShipDate>#arguments.ShipDate#</ShipDate>
 					</Package>
-				</RateV3Request>';
-			func.requestResponse = processRequest(func.url, func.api, func.xml);
-			return func.requestResponse;
+				</RateV4Request>';
+			local.requestResponse = processRequest(local.api, local.xml);
+			return local.requestResponse;
 		</cfscript>
 	</cffunction>
 
 	<cffunction name="ZipCodeLookup" access="public" returntype="xml" output="false" hint="Returns ZIP Code and ZIP Code + 4 corresponding to the given address, city, and state from the USPS ZipCodeLookup API">
-		<cfargument name="productionURL" type="Boolean" required="false" default="true">
-		<cfargument name="secureURL" type="Boolean" required="false" default="false">
-		<cfargument name="userid" type="String" required="true">
 		<cfargument name="FirmName" type="String" required="false" default="">
 		<cfargument name="Address1" type="String" required="false" default="">
 		<cfargument name="Address2" type="String" required="true">
 		<cfargument name="City" type="String" required="true">
 		<cfargument name="State" type="String" required="true">
 		<cfscript>
-			var func = prepFunc(arguments.productionURL, arguments.secureURL);
-			func.api = 'ZipCodeLookup';
-			func.xml = '<ZipCodeLookupRequest USERID="#arguments.userid#">
+			local.api = 'ZipCodeLookup';
+			local.xml = '<ZipCodeLookupRequest USERID="#getUspsUserID()#">
 					<Address ID="1">
 						<FirmName>#arguments.FirmName#</FirmName>
 						<Address1>#arguments.Address1#</Address1>
@@ -137,26 +142,120 @@ limitations under the License.
 						<State>#arguments.State#</State>
 					</Address>
 				</ZipCodeLookupRequest>';
-			func.requestResponse = processRequest(func.url, func.api, func.xml);
-			return func.requestResponse;
+			local.requestResponse = processRequest(local.api, local.xml);
+			return local.requestResponse;
 		</cfscript>
 	</cffunction>
 
 	<cffunction name="CityStateLookup" access="public" returntype="xml" output="false" hint="Returns city and state corresponding to the given ZIP Code from the USPS CityStateLookup API">
-		<cfargument name="productionURL" type="Boolean" required="false" default="true">
-		<cfargument name="secureURL" type="Boolean" required="false" default="false">
-		<cfargument name="userid" type="String" required="true">
 		<cfargument name="Zip5" type="String" required="false" default="">
 		<cfscript>
-			var func = prepFunc(arguments.productionURL, arguments.secureURL);
-			func.api = 'CityStateLookup';
-			func.xml = '<CityStateLookupRequest USERID="#arguments.userid#">
+			local.api = 'CityStateLookup';
+			local.xml = '<CityStateLookupRequest USERID="#getUspsUserID()#">
 					<ZipCode ID="1">
 						<Zip5>#arguments.Zip5#</Zip5>
 					</ZipCode>
 				</CityStateLookupRequest>';
-			func.requestResponse = processRequest(func.url, func.api, func.xml);
-			return func.requestResponse;
+			local.requestResponse = processRequest(local.api, local.xml);
+			return local.requestResponse;
+		</cfscript>
+	</cffunction>
+
+	<cffunction name="AddressValidate" access="public" returntype="xml" output="false" hint="Corrects errors in street addresses, including abbreviations and missing information, and supplies ZIP Codes and ZIP Codes + 4.">
+		<cfargument name="FirmName" type="String" required="false" default="">
+		<cfargument name="Address1" type="String" required="false" default="">
+		<cfargument name="Address2" type="String" required="true">
+		<cfargument name="City" type="String" required="false" default="">
+		<cfargument name="State" type="String" required="false" default="">
+		<cfargument name="Urbanization" type="String" required="false" default="">
+		<cfargument name="Zip5" type="String" required="false" default="">
+		<cfargument name="Zip4" type="String" required="false" default="">
+		<cfscript>
+			local.api = 'Verify';
+			local.xml = '<AddressValidateRequest USERID="#getUspsUserID()#">
+					<Address ID="1">
+						<FirmName>#arguments.FirmName#</FirmName>
+						<Address1>#arguments.Address1#</Address1>
+						<Address2>#arguments.Address2#</Address2>
+						<City>#arguments.City#</City>
+						<State>#arguments.State#</State>
+						<Urbanization>#arguments.Urbanization#</Urbanization>
+						<Zip5>#arguments.Zip5#</Zip5>
+						<Zip4>#arguments.Zip4#</Zip4>
+					</Address>
+				</AddressValidateRequest>';
+			local.requestResponse = processRequest(local.api, local.xml);
+			return local.requestResponse;
+		</cfscript>
+	</cffunction>
+
+	<cffunction name="Track" access="public" returntype="xml" output="false" hint="Lets customers determine the delivery status of their Priority Mail, Express Mail, and Package Services packages with Delivery Confirmation.">
+		<cfargument name="TrackID" type="String" required="true">
+		<cfscript>
+			local.api = 'TrackV2';
+			local.xml = '<TrackRequest USERID="#getUspsUserID()#">
+					<TrackID ID="#arguments.TrackID#"></TrackID>
+				</TrackRequest>';
+			local.requestResponse = processRequest(local.api, local.xml);
+			return local.requestResponse;
+		</cfscript>
+	</cffunction>
+
+	<cffunction name="TrackField" access="public" returntype="xml" output="false" hint="Identical to the Track request except for the request name and the return information. Data returned still contains the detail and summary information, but this information is broken down into fields instead of having onlone line of text.">
+		<cfargument name="TrackID" type="String" required="true">
+		<cfscript>
+			local.api = 'TrackV2';
+			local.xml = '<TrackFieldRequest USERID="#getUspsUserID()#">
+					<TrackID ID="#arguments.TrackID#"></TrackID>
+				</TrackFieldRequest>';
+			local.requestResponse = processRequest(local.api, local.xml);
+			return local.requestResponse;
+		</cfscript>
+	</cffunction>
+
+	<cffunction name="ExpressMailCommitment" access="public" returntype="xml" output="false" hint="Provides delivery commitments for Express Mail packages.">
+		<cfargument name="OriginZIP" type="String" required="true">
+		<cfargument name="DestinationZIP" type="String" required="true">
+		<cfargument name="Date" type="String" required="false" default="">
+		<cfargument name="ReturnDates" type="String" required="false" default="">
+		<cfscript>
+			local.api = 'ExpressMailCommitment';
+			local.xml = '<ExpressMailCommitmentRequest USERID="#getUspsUserID()#">
+					<OriginZIP>#arguments.OriginZIP#</OriginZIP>
+					<DestinationZIP>#arguments.DestinationZIP#</DestinationZIP>
+					<Date>#arguments.Date#</Date>
+					<ReturnDates>#arguments.ReturnDates#</ReturnDates>
+				</ExpressMailCommitmentRequest>';
+			local.requestResponse = processRequest(local.api, local.xml);
+			return local.requestResponse;
+		</cfscript>
+	</cffunction>
+
+	<cffunction name="CarrierPickupAvailability" access="public" returntype="xml" output="false" hint="Checks the availability for Carrier Pickup at a specific address and informs the user of the first available date for pickup.">
+		<cfargument name="FirmName" type="String"  required="false" default="">
+		<cfargument name="SuiteOrApt" type="String"  required="false" default="">
+		<cfargument name="Address2" type="String" required="true">
+		<cfargument name="Urbanization" type="String" required="false" default="">
+		<cfargument name="City" type="String" required="false" default="">
+		<cfargument name="State" type="String" required="false" default="">
+		<cfargument name="ZIP5" type="String" required="true">
+		<cfargument name="ZIP4" type="String" required="false" default="">
+		<cfargument name="DATE" type="String" required="false" default="">
+		<cfscript>
+			local.api = 'CarrierPickupAvailability';
+			local.xml = '<CarrierPickupAvailabilityRequest USERID="#getUspsUserID()#">
+					<FirmName>#arguments.FirmName#</FirmName>
+					<SuiteOrApt>#arguments.SuiteOrApt#</SuiteOrApt>
+					<Address2>#arguments.Address2#</Address2>
+					<Urbanization>#arguments.Urbanization#</Urbanization>
+					<City>#arguments.City#</City>
+					<State>#arguments.State#</State>
+					<ZIP5>#arguments.ZIP5#</ZIP5>
+					<ZIP4>#arguments.ZIP4#</ZIP4>
+					<DATE>#arguments.DATE#</DATE>
+				</CarrierPickupAvailabilityRequest>';
+			local.requestResponse = processRequest(local.api, local.xml);
+			return local.requestResponse;
 		</cfscript>
 	</cffunction>
 
