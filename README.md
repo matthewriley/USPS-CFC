@@ -1,6 +1,6 @@
 # ColdFusion USPS CFC
 
-This is a ColdFusion CFC used to connect to the USPS API. 
+This is a ColdFusion CFC used to connect to the USPS API. This has been tested with ColdFusion 9 and 10. 
 
 ## API's Supported:
  * CarrierPickupAvailability
@@ -12,18 +12,18 @@ This is a ColdFusion CFC used to connect to the USPS API.
  * ZipCodeLookup
 
 
-In order for this CFC to work you need a [USPS API account](http://www.usps.com/webtools/) and you'll need to perform the tests required by the USPS to activate your account.
+In order for this CFC to work you need a [USPS API account](https://www.usps.com/business/webtools.htm) and you'll need to perform the tests required by the USPS to activate your account.
 
 ## Initialization
 
 This is a straight forward CFC. You can initialize it using your preferred method. Here are a few examples. The named arguments are listed for clarity but you can also pass the values in by themselves.
 
-**Old Fashioned**
+**CreateObject()**
 
 	variables.uspsUserID = 'YourIdHere';
 	variables.usps = CreateObject('component', 'usps').init(isProduction=false, isSecure=false, uspsUserID=variables.uspsUserID);
 
-**New Hotness**
+**New Keyword**
 
 	variables.uspsUserID = 'YourIdHere';
 	variables.usps = New usps(isProduction=false, isSecure=false, uspsUserID=variables.uspsUserID);
@@ -71,7 +71,7 @@ This is where the magic happens.
 
 **USPSCannedTests.cfm**
 
-The USPS Development Guide includes a number of canned tests. This file has them preconfigured and ready to go. Plug in your USPS user ID and run it.
+The [USPS Development Guide](https://www.usps.com/business/webtools-technical-guides.htm) includes a number of canned tests. This file has them preconfigured and ready to go. Plug in your USPS user ID and run it.
 
 **ManualTester.html**
 

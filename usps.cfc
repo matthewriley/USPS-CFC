@@ -20,20 +20,26 @@ limitations under the License.
 --->
 
 <cfcomponent name="USPS" displayname="USPS CFC" accessors="true" output="false" hint="This is a ColdFusion CFC used to connect to the USPS API.">
-	<cfproperty name="isProduction" type="boolean" default="false">
-	<cfproperty name="isSecure" type="boolean" default="true">
-	<cfproperty name="uspsUserID" type="string" default="">
-	<cfproperty name="url" type="string" default="">
-	<cfproperty name="URLTEST" type="string" default="http://testing.shippingapis.com/ShippingAPITest.dll">
-	<cfproperty name="URLTESTSECURE" type="string" default="https://secure.shippingapis.com/ShippingAPITest.dll">
-	<cfproperty name="URLPROD" type="string" default="http://production.shippingapis.com/ShippingAPI.dll">
-	<cfproperty name="URLPRODSECURE" type="string" default="https://secure.shippingaps.com/ShippingAPI.dll">
+	<cfproperty name="isProduction" type="boolean">
+	<cfproperty name="isSecure" type="boolean">
+	<cfproperty name="uspsUserID" type="string">
+	<cfproperty name="url" type="string">
+	<cfproperty name="URLTEST" type="string">
+	<cfproperty name="URLTESTSECURE" type="string">
+	<cfproperty name="URLPROD" type="string">
+	<cfproperty name="URLPRODSECURE" type="string">
 
 	<cffunction name="init" access="public" returntype="USPS" output="false" hint="Initializes the USPS CFC">
 		<cfargument name="isProduction" type="boolean" required="false" default="#getIsProduction()#">
 		<cfargument name="isSecure" type="boolean" required="false" default="#getIsSecure()#">
 		<cfargument name="uspsUserID" type="string" required="false" default="#getUspsUserID()#">
 		<cfscript>
+			// set constants (CF9 fix)
+			setURLTEST("http://testing.shippingapis.com/ShippingAPITest.dll");
+			setURLTESTSECURE("https://secure.shippingapis.com/ShippingAPITest.dll");
+			setURLPROD("http://production.shippingapis.com/ShippingAPI.dll");
+			setURLPRODSECURE("https://secure.shippingaps.com/ShippingAPI.dll");
+
 			// set production and secure flags
 			setIsProduction(arguments.isProduction);
 			setIsSecure(arguments.isSecure);
@@ -64,22 +70,20 @@ limitations under the License.
 	<cffunction name="processRequest" access="private" returntype="xml" output="false" hint="Makes the HTTP request to the USPS API.">
 		<cfargument name="api" type="String" required="true">
 		<cfargument name="xml" type="String" required="true">
-
 		<cftry>
 			<cfhttp url="#getUrl()#" method="post" timeout="3" throwonerror="true">
 				<cfhttpparam encoded="no" type="formfield" name="api" value="#arguments.api#">
 				<cfhttpparam encoded="no" type="formfield" name="xml" value="#arguments.xml#">
 			</cfhttp>
 			<cfset local.responseXML = cfhttp.fileContent />
-			<cfcatch type="any" name="e">
+			<cfcatch type="any">
 				<cfset local.responseXML = '<?xml version="1.0"?>
 				<Error>
-					<Type>#e.Type#</Type>
-					<Message>#e.Message#</Message>
+					<Type>#cfcatch.Type#</Type>
+					<Message>#cfcatch.Message#</Message>
 				</Error>' />
 			</cfcatch>
 		</cftry>
-
 		<cfreturn XmlParse(local.responseXML)>
 	</cffunction>
 
