@@ -73,7 +73,7 @@ limitations under the License.
 		<cftry>
 			<cfhttp url="#getUrl()#" method="post" timeout="3" throwonerror="true">
 				<cfhttpparam encoded="no" type="formfield" name="api" value="#arguments.api#">
-				<cfhttpparam encoded="no" type="formfield" name="xml" value="#arguments.xml#">
+				<cfhttpparam encoded="no" type="formfield" name="xml" value="#Trim(arguments.xml)#">
 			</cfhttp>
 			<cfset local.responseXML = cfhttp.fileContent />
 			<cfcatch type="any">
@@ -95,7 +95,7 @@ limitations under the License.
 		<cfargument name="Pounds" type="String" required="true">
 		<cfargument name="Ounces" type="String" required="false" default="0">
 		<cfargument name="Container" type="String" required="false" default="">
-		<cfargument name="Size" type="String" required="true">
+		<cfargument name="Size" type="String" required="false" default="">
 		<cfargument name="Width" type="String" required="false" default="">
 		<cfargument name="Length" type="String" required="false" default="">
 		<cfargument name="Height" type="String" required="false" default="">
@@ -103,30 +103,72 @@ limitations under the License.
 		<cfargument name="Machinable" type="String" required="false" default="true">
 		<cfargument name="ReturnLocations" type="String" required="false" default="">
 		<cfargument name="ShipDate" type="String" required="false" default="">
-		<cfscript>
-			local.api = 'RateV4';
-			local.xml = '<RateV4Request USERID="#getUspsUserID()#">
-					<Package ID="1">
-						<Service>#arguments.Service#</Service>
-						<FirstClassMailType>#arguments.FirstClassMailType#</FirstClassMailType>
-						<ZipOrigination>#arguments.ZipOrigination#</ZipOrigination>
-						<ZipDestination>#arguments.ZipDestination#</ZipDestination>
-						<Pounds>#arguments.Pounds#</Pounds>
-						<Ounces>#arguments.Ounces#</Ounces>
-						<Container>#arguments.Container#</Container>
-						<Size>#arguments.Size#</Size>
-						<Width>#arguments.Width#</Width>
-						<Length>#arguments.Length#</Length>
-						<Height>#arguments.Height#</Height>
-						<Girth>#arguments.Girth#</Girth>
-						<Machinable>#arguments.Machinable#</Machinable>
-						<ReturnLocations>#arguments.ReturnLocations#</ReturnLocations>
-						<ShipDate>#arguments.ShipDate#</ShipDate>
-					</Package>
-				</RateV4Request>';
-			local.requestResponse = processRequest(local.api, local.xml);
-			return local.requestResponse;
-		</cfscript>
+		<cfset local.api = "RateV4">
+		<cfsavecontent variable="local.xml"><cfoutput>
+			<RateV4Request USERID="#getUspsUserID()#">
+				<Package ID="1">
+					<Service>#arguments.Service#</Service><cfif Len(Trim(arguments.FirstClassMailType))>
+					<FirstClassMailType>#arguments.FirstClassMailType#</FirstClassMailType></cfif>
+					<ZipOrigination>#arguments.ZipOrigination#</ZipOrigination>
+					<ZipDestination>#arguments.ZipDestination#</ZipDestination>
+					<Pounds>#Val(Trim(arguments.Pounds))#</Pounds>
+					<Ounces>#Val(Trim(arguments.Ounces))#</Ounces>
+					<Container>#arguments.Container#</Container><cfif Len(Trim(arguments.Size))>
+					<Size>#arguments.Size#</Size></cfif><cfif Len(Trim(arguments.Width))>
+					<Width>#arguments.Width#</Width></cfif><cfif Len(Trim(arguments.Length))>
+					<Length>#arguments.Length#</Length></cfif><cfif Len(Trim(arguments.Height))>
+					<Height>#arguments.Height#</Height></cfif><cfif Len(Trim(arguments.Girth))>
+					<Girth>#arguments.Girth#</Girth></cfif><cfif Len(Trim(arguments.Machinable))>
+					<Machinable>#arguments.Machinable#</Machinable></cfif><cfif Len(Trim(arguments.ReturnLocations))>
+					<ReturnLocations>#arguments.ReturnLocations#</ReturnLocations></cfif><cfif IsDate(arguments.ShipDate)>
+					<ShipDate>#DateFormat(arguments.ShipDate,'DD-mmm-yyyy')#</ShipDate></cfif>
+				</Package>
+			</RateV4Request>
+		</cfoutput></cfsavecontent>
+		<cfset local.requestResponse = processRequest(local.api, local.xml)>
+		<cfreturn local.requestResponse>
+	</cffunction>
+
+	<cffunction name="IntlRateV2" access="public" returntype="xml" output="false" hint="Returns international rates from the USPS IntlRateV2 API">
+		<cfargument name="Pounds" type="String" required="true">
+		<cfargument name="Ounces" type="String" required="false" default="0">
+		<cfargument name="Container" type="String" required="false" default="">
+		<cfargument name="Size" type="String" required="false">
+		<cfargument name="Width" type="String" required="false" default="0">
+		<cfargument name="Length" type="String" required="false" default="0">
+		<cfargument name="Height" type="String" required="false" default="0">
+		<cfargument name="Girth" type="String" required="false" default="0">
+		<cfargument name="Machinable" type="String" required="false" default="true">
+		<cfargument name="MailType" type="String" required="false" default="Package">
+		<cfargument name="ValueOfContents" type="String" required="false" default="0">
+		<cfargument name="ReturnLocations" type="String" required="false" default="">
+		<cfargument name="Country" type="String" required="false" default="Canada">
+		<cfargument name="ShipDate" type="String" required="false" default="">
+		<cfargument name="CommercialFlag" type="String" required="false" default="">
+		<CFSET local.api = "IntlRateV2">
+		<cfsavecontent VARIABLE="local.xml"><cfoutput>
+			<IntlRateV2Request USERID="#getUspsUserID()#">
+				<Package ID="1">
+					<Pounds>#val(Trim(arguments.Pounds))#</Pounds>
+					<Ounces>#val(Trim(arguments.Ounces))#</Ounces><cfif Len(Trim(arguments.Machinable))>
+					<Machinable>#arguments.Machinable#</Machinable></cfif>
+					<MailType>#arguments.MailType#</MailType>
+					<ValueOfContents>#arguments.ValueOfContents#</ValueOfContents>
+					<Country>#arguments.Country#</Country><cfif Len(Trim(arguments.Container))>
+					<Container>#arguments.Container#</Container></cfif><cfif Len(Trim(arguments.Size))>
+					<Size>#arguments.Size#</Size></cfif>
+					<Width>#arguments.Width#</Width>
+					<Length>#arguments.Length#</Length>
+					<Height>#arguments.Height#</Height>
+					<Girth>#arguments.Girth#</Girth><cfif Len(Trim(arguments.ReturnLocations))>
+					<ReturnLocations>#arguments.ReturnLocations#</ReturnLocations></cfif><cfif IsDate(arguments.ShipDate)>
+					<ShipDate>#DateFormat(arguments.ShipDate,'DD-mmm-yyyy')#</ShipDate></cfif><cfif Len(arguments.CommercialFlag)>
+					<CommercialFlag>#arguments.CommercialFlag#</CommercialFlag></cfif>
+				</Package>
+			</IntlRateV2Request>
+		</cfoutput></cfsavecontent>
+		<cfset local.requestResponse = processRequest(local.api, local.xml)>
+		<cfreturn local.requestResponse>
 	</cffunction>
 
 	<cffunction name="ZipCodeLookup" access="public" returntype="xml" output="false" hint="Returns ZIP Code and ZIP Code + 4 corresponding to the given address, city, and state from the USPS ZipCodeLookup API">
@@ -135,34 +177,34 @@ limitations under the License.
 		<cfargument name="Address2" type="String" required="true">
 		<cfargument name="City" type="String" required="true">
 		<cfargument name="State" type="String" required="true">
-		<cfscript>
-			local.api = 'ZipCodeLookup';
-			local.xml = '<ZipCodeLookupRequest USERID="#getUspsUserID()#">
-					<Address ID="1">
-						<FirmName>#arguments.FirmName#</FirmName>
-						<Address1>#arguments.Address1#</Address1>
-						<Address2>#arguments.Address2#</Address2>
-						<City>#arguments.City#</City>
-						<State>#arguments.State#</State>
-					</Address>
-				</ZipCodeLookupRequest>';
-			local.requestResponse = processRequest(local.api, local.xml);
-			return local.requestResponse;
-		</cfscript>
+		<cfset local.api = 'ZipCodeLookup'>
+		<cfsavecontent variable="local.xml"><cfoutput>
+			<ZipCodeLookupRequest USERID="#getUspsUserID()#">
+				<Address ID="1">
+					<FirmName>#arguments.FirmName#</FirmName>
+					<Address1>#arguments.Address1#</Address1>
+					<Address2>#arguments.Address2#</Address2>
+					<City>#arguments.City#</City>
+					<State>#arguments.State#</State>
+				</Address>
+			</ZipCodeLookupRequest>
+		</cfoutput></cfsavecontent>
+		<cfset local.requestResponse = processRequest(local.api, local.xml)>
+		<cfreturn local.requestResponse>
 	</cffunction>
 
 	<cffunction name="CityStateLookup" access="public" returntype="xml" output="false" hint="Returns city and state corresponding to the given ZIP Code from the USPS CityStateLookup API">
 		<cfargument name="Zip5" type="String" required="false" default="">
-		<cfscript>
-			local.api = 'CityStateLookup';
-			local.xml = '<CityStateLookupRequest USERID="#getUspsUserID()#">
-					<ZipCode ID="1">
-						<Zip5>#arguments.Zip5#</Zip5>
-					</ZipCode>
-				</CityStateLookupRequest>';
-			local.requestResponse = processRequest(local.api, local.xml);
-			return local.requestResponse;
-		</cfscript>
+		<cfset local.api = 'CityStateLookup'>
+		<cfsavecontent variable="local.xml"><cfoutput>
+			<CityStateLookupRequest USERID="#getUspsUserID()#">
+				<ZipCode ID="1">
+					<Zip5>#arguments.Zip5#</Zip5>
+				</ZipCode>
+			</CityStateLookupRequest>
+		</cfoutput></cfsavecontent>
+		<cfset local.requestResponse = processRequest(local.api, local.xml)>
+		<cfreturn local.requestResponse>
 	</cffunction>
 
 	<cffunction name="AddressValidate" access="public" returntype="xml" output="false" hint="Corrects errors in street addresses, including abbreviations and missing information, and supplies ZIP Codes and ZIP Codes + 4.">
@@ -174,47 +216,47 @@ limitations under the License.
 		<cfargument name="Urbanization" type="String" required="false" default="">
 		<cfargument name="Zip5" type="String" required="false" default="">
 		<cfargument name="Zip4" type="String" required="false" default="">
-		<cfscript>
-			local.api = 'Verify';
-			local.xml = '<AddressValidateRequest USERID="#getUspsUserID()#">
-					<Address ID="1">
-						<FirmName>#arguments.FirmName#</FirmName>
-						<Address1>#arguments.Address1#</Address1>
-						<Address2>#arguments.Address2#</Address2>
-						<City>#arguments.City#</City>
-						<State>#arguments.State#</State>
-						<Urbanization>#arguments.Urbanization#</Urbanization>
-						<Zip5>#arguments.Zip5#</Zip5>
-						<Zip4>#arguments.Zip4#</Zip4>
-					</Address>
-				</AddressValidateRequest>';
-			local.requestResponse = processRequest(local.api, local.xml);
-			return local.requestResponse;
-		</cfscript>
+		<cfset local.api = 'Verify'>
+		<cfsavecontent variable="local.xml"><cfoutput>
+			<AddressValidateRequest USERID="#getUspsUserID()#">
+				<Address ID="1">
+					<FirmName>#arguments.FirmName#</FirmName>
+					<Address1>#arguments.Address1#</Address1>
+					<Address2>#arguments.Address2#</Address2>
+					<City>#arguments.City#</City>
+					<State>#arguments.State#</State><cfif Len(Trim(arguments.Urbanization))>
+					<Urbanization>#arguments.Urbanization#</Urbanization></cfif>
+					<Zip5>#arguments.Zip5#</Zip5>
+					<Zip4>#arguments.Zip4#</Zip4>
+				</Address>
+			</AddressValidateRequest>
+		</cfoutput></cfsavecontent>
+		<cfset local.requestResponse = processRequest(local.api, local.xml)>
+		<cfreturn local.requestResponse>
 	</cffunction>
 
 	<cffunction name="Track" access="public" returntype="xml" output="false" hint="Lets customers determine the delivery status of their Priority Mail, Express Mail, and Package Services packages with Delivery Confirmation.">
 		<cfargument name="TrackID" type="String" required="true">
-		<cfscript>
-			local.api = 'TrackV2';
-			local.xml = '<TrackRequest USERID="#getUspsUserID()#">
-					<TrackID ID="#arguments.TrackID#"></TrackID>
-				</TrackRequest>';
-			local.requestResponse = processRequest(local.api, local.xml);
-			return local.requestResponse;
-		</cfscript>
+		<cfset local.api = 'TrackV2'>
+		<cfsavecontent variable="local.xml"><cfoutput>
+			<TrackRequest USERID="#getUspsUserID()#">
+				<TrackID ID="#arguments.TrackID#"></TrackID>
+			</TrackRequest>
+		</cfoutput></cfsavecontent>
+		<cfset local.requestResponse = processRequest(local.api, local.xml)>
+		<cfreturn local.requestResponse>
 	</cffunction>
 
 	<cffunction name="TrackField" access="public" returntype="xml" output="false" hint="Identical to the Track request except for the request name and the return information. Data returned still contains the detail and summary information, but this information is broken down into fields instead of having onlone line of text.">
 		<cfargument name="TrackID" type="String" required="true">
-		<cfscript>
-			local.api = 'TrackV2';
-			local.xml = '<TrackFieldRequest USERID="#getUspsUserID()#">
-					<TrackID ID="#arguments.TrackID#"></TrackID>
-				</TrackFieldRequest>';
-			local.requestResponse = processRequest(local.api, local.xml);
-			return local.requestResponse;
-		</cfscript>
+		<cfset local.api = 'TrackV2'>
+		<cfsavecontent variable="local.xml"><cfoutput>
+			<TrackFieldRequest USERID="#getUspsUserID()#">
+				<TrackID ID="#arguments.TrackID#"></TrackID>
+			</TrackFieldRequest>
+		</cfoutput></cfsavecontent>
+		<cfset local.requestResponse = processRequest(local.api, local.xml)>
+		<cfreturn local.requestResponse>
 	</cffunction>
 
 	<cffunction name="ExpressMailCommitment" access="public" returntype="xml" output="false" hint="Provides delivery commitments for Express Mail packages.">
@@ -222,17 +264,17 @@ limitations under the License.
 		<cfargument name="DestinationZIP" type="String" required="true">
 		<cfargument name="Date" type="String" required="false" default="">
 		<cfargument name="ReturnDates" type="String" required="false" default="">
-		<cfscript>
-			local.api = 'ExpressMailCommitment';
-			local.xml = '<ExpressMailCommitmentRequest USERID="#getUspsUserID()#">
-					<OriginZIP>#arguments.OriginZIP#</OriginZIP>
-					<DestinationZIP>#arguments.DestinationZIP#</DestinationZIP>
-					<Date>#arguments.Date#</Date>
-					<ReturnDates>#arguments.ReturnDates#</ReturnDates>
-				</ExpressMailCommitmentRequest>';
-			local.requestResponse = processRequest(local.api, local.xml);
-			return local.requestResponse;
-		</cfscript>
+		<cfset local.api = 'ExpressMailCommitment'>
+		<cfsavecontent variable="local.xml"><cfoutput>
+			<ExpressMailCommitmentRequest USERID="#getUspsUserID()#">
+				<OriginZIP>#arguments.OriginZIP#</OriginZIP>
+				<DestinationZIP>#arguments.DestinationZIP#</DestinationZIP>
+				<Date>#arguments.Date#</Date><cfif Len(Trim(arguments.ReturnDates))>
+				<ReturnDates>#arguments.ReturnDates#</ReturnDates></cfif>
+			</ExpressMailCommitmentRequest>
+		</cfoutput></cfsavecontent>
+		<cfset local.requestResponse = processRequest(local.api, local.xml)>
+		<cfreturn local.requestResponse>
 	</cffunction>
 
 	<cffunction name="CarrierPickupAvailability" access="public" returntype="xml" output="false" hint="Checks the availability for Carrier Pickup at a specific address and informs the user of the first available date for pickup.">
@@ -245,22 +287,22 @@ limitations under the License.
 		<cfargument name="ZIP5" type="String" required="true">
 		<cfargument name="ZIP4" type="String" required="false" default="">
 		<cfargument name="DATE" type="String" required="false" default="">
-		<cfscript>
-			local.api = 'CarrierPickupAvailability';
-			local.xml = '<CarrierPickupAvailabilityRequest USERID="#getUspsUserID()#">
-					<FirmName>#arguments.FirmName#</FirmName>
-					<SuiteOrApt>#arguments.SuiteOrApt#</SuiteOrApt>
-					<Address2>#arguments.Address2#</Address2>
-					<Urbanization>#arguments.Urbanization#</Urbanization>
-					<City>#arguments.City#</City>
-					<State>#arguments.State#</State>
-					<ZIP5>#arguments.ZIP5#</ZIP5>
-					<ZIP4>#arguments.ZIP4#</ZIP4>
-					<DATE>#arguments.DATE#</DATE>
-				</CarrierPickupAvailabilityRequest>';
-			local.requestResponse = processRequest(local.api, local.xml);
-			return local.requestResponse;
-		</cfscript>
+		<cfset local.api = 'CarrierPickupAvailability'>
+		<cfsavecontent variable="local.xml"><cfoutput>
+			<CarrierPickupAvailabilityRequest USERID="#getUspsUserID()#">
+				<FirmName>#arguments.FirmName#</FirmName>
+				<SuiteOrApt>#arguments.SuiteOrApt#</SuiteOrApt>
+				<Address2>#arguments.Address2#</Address2>
+				<Urbanization>#arguments.Urbanization#</Urbanization>
+				<City>#arguments.City#</City>
+				<State>#arguments.State#</State>
+				<ZIP5>#arguments.ZIP5#</ZIP5>
+				<ZIP4>#arguments.ZIP4#</ZIP4>
+				<DATE>#arguments.DATE#</DATE>
+			</CarrierPickupAvailabilityRequest>
+		</cfoutput></cfsavecontent>
+		<cfset local.requestResponse = processRequest(local.api, local.xml)>
+		<cfreturn local.requestResponse>
 	</cffunction>
 
 </cfcomponent>

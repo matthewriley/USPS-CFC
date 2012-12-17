@@ -116,6 +116,36 @@ variables.CarrierPickupAvailability2 = variables.usps.CarrierPickupAvailability(
 );
 WriteDump(var="#variables.CarrierPickupAvailability2#" label="CarrierPickupAvailability2");
 
+
+// The following are not canned tests but still useful
+// You might need your account activated to run these
+variables.RateV4 = variables.usps.RateV4(
+	Service = 'FIRST CLASS',
+	FirstClassMailType = 'LETTER',
+	ZipOrigination = '44106',
+	ZipDestination = '20770',
+	Pounds = '0',
+	Ounces = '3.5'
+);
+WriteDump(var="#variables.RateV4#" label="RateV4");
+
+variables.IntlRateV2 = variables.usps.IntlRateV2(
+	Pounds = '15',
+	Ounces = '0',
+	Container = 'RECTANGULAR',
+	Size = 'LARGE',
+	Width = '10',
+	Length = '15',
+	Height = '15',
+	Girth = '0',
+	Machinable = 'True',
+	MailType = 'Package',
+	ValueOfContents = '750',
+	Country = 'Algeria',
+	CommercialFlag = 'N'
+);
+WriteDump(var="#variables.IntlRateV2#" label="IntlRateV2");
+
 </cfscript>
 
 </body>

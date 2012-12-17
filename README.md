@@ -6,6 +6,7 @@ This is a ColdFusion CFC used to connect to the USPS API. This has been tested w
  * CarrierPickupAvailability
  * CityStateLookup
  * ExpressMailCommitment
+ * IntlRateV2
  * RateV4
  * TrackV2
  * Verify
@@ -79,7 +80,7 @@ This is a plain HTML file with a form to post directly to the USPS Test API. Use
 
 ## Pull Requests
 
-I don't have all the USPS API's implemented so if there's one you'd like to add, feel free to do so with a pull request. Just be sure to follow the general method pattern I have for a consistent implementation.
+I don't have all the USPS API's implemented so if there's one you'd like to add, feel free to do so with a pull request. Just be sure to follow the general method pattern for a consistent implementation.
 
 
 ## License
