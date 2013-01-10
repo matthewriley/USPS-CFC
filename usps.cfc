@@ -95,7 +95,7 @@ limitations under the License.
 		<cfargument name="Pounds" type="String" required="true">
 		<cfargument name="Ounces" type="String" required="false" default="0">
 		<cfargument name="Container" type="String" required="false" default="">
-		<cfargument name="Size" type="String" required="false" default="">
+		<cfargument name="Size" type="String" required="true">
 		<cfargument name="Width" type="String" required="false" default="">
 		<cfargument name="Length" type="String" required="false" default="">
 		<cfargument name="Height" type="String" required="false" default="">
@@ -113,8 +113,8 @@ limitations under the License.
 					<ZipDestination>#arguments.ZipDestination#</ZipDestination>
 					<Pounds>#Val(Trim(arguments.Pounds))#</Pounds>
 					<Ounces>#Val(Trim(arguments.Ounces))#</Ounces>
-					<Container>#arguments.Container#</Container><cfif Len(Trim(arguments.Size))>
-					<Size>#arguments.Size#</Size></cfif><cfif Len(Trim(arguments.Width))>
+					<Container>#arguments.Container#</Container>
+					<Size>#arguments.Size#</Size><cfif Len(Trim(arguments.Width))>
 					<Width>#arguments.Width#</Width></cfif><cfif Len(Trim(arguments.Length))>
 					<Length>#arguments.Length#</Length></cfif><cfif Len(Trim(arguments.Height))>
 					<Height>#arguments.Height#</Height></cfif><cfif Len(Trim(arguments.Girth))>
