@@ -38,7 +38,7 @@ limitations under the License.
 			setURLTEST("http://testing.shippingapis.com/ShippingAPITest.dll");
 			setURLTESTSECURE("https://secure.shippingapis.com/ShippingAPITest.dll");
 			setURLPROD("http://production.shippingapis.com/ShippingAPI.dll");
-			setURLPRODSECURE("https://secure.shippingaps.com/ShippingAPI.dll");
+			setURLPRODSECURE("https://secure.shippingapis.com/ShippingAPI.dll");
 
 			// set production and secure flags
 			setIsProduction(arguments.isProduction);
